@@ -47,6 +47,9 @@
         #wordButtons {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(52px,auto);
           align-content:start;height:auto;min-height:0;overflow:visible;touch-action:pan-y;padding-bottom:8px;}
         #wordButtons button {height:auto;min-height:52px;padding:6px 3px;touch-action:pan-y;font-size:13px;}
+        #wordButtons button {background:#374151;box-shadow:none;filter:none;}
+        #wordButtons button:hover,#wordButtons button:active {background:#374151;box-shadow:none;filter:none;}
+        #wordButtons button span:first-child {color:#e2e8f0;}
         #wordButtons button span:last-child {font-size:11px;}
         button {touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
         button:focus-visible,input:focus-visible {outline:3px solid #fbbf24;outline-offset:2px;}
@@ -81,7 +84,7 @@
             </div>
             <div class="text-right">
                 <span class="text-xs text-gray-400">生命</span>
-                <div id="livesDisplay" class="text-xl font-mono font-bold text-red-400">❤❤❤</div>
+                <div id="livesDisplay" class="text-xl font-mono font-bold text-red-400">❤❤❤❤</div>
             </div>
         </div>
     </div>
@@ -96,7 +99,7 @@
             <p class="text-gray-300 mb-8 text-center px-4">
                 在遊戲區拖曳，或滑動控制條移動戰車<br>
                 另一隻手點選單字，即可發射火炮彈<br>
-                <span class="text-yellow-400">收集滿 17 個單字過關！答錯或撞到圖片會扣血。</span>
+                <span class="text-yellow-400">答對全部 17 個不同單字即可過關！<br>共有 4 顆心，答錯或撞到圖片會扣血。</span>
             </p>
             <button id="startBtn" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-xl font-bold shadow-lg transform transition hover:scale-105">開始遊戲</button>
         </div>
@@ -252,7 +255,7 @@
         let muzzleFlash = 0;
         let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
         let score = 0;
-        let lives = 3;
+        let lives = 4;
         let lastTime = 0;
         let spawnTimer = 0;
         let spawnInterval = 2000;
@@ -292,14 +295,13 @@
             VOCABULARY.forEach(item => {
                 const btn = document.createElement('button');
                 btn.id = `btn-${item.word.replace(/\s+/g, '-')}`; 
-                btn.className = 'min-h-[44px] btn-press bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-1 rounded border border-gray-500 text-xs sm:text-sm flex flex-col items-center justify-center transition-colors duration-300';
+                btn.className = 'min-h-[44px] btn-press bg-gray-700 text-white font-semibold py-2 px-1 rounded border border-gray-500 text-xs sm:text-sm flex flex-col items-center justify-center';
                 btn.innerHTML = `<span class="text-yellow-300 leading-tight text-center break-words w-full">${item.word}</span><span class="text-[10px] text-gray-400 mt-0.5">${item.label}</span>`;
                 
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
                     fireBullet(item.word);
-                    btn.classList.add('bg-blue-600', 'border-blue-400');
-                    setTimeout(() => btn.classList.remove('bg-blue-600', 'border-blue-400'), 150);
+
                 });
 
 
@@ -317,7 +319,7 @@
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             tank.x = oldWidth > 1 ? tank.x / oldWidth * gameWidth : gameWidth / 2;
             tank.targetX = oldWidth > 1 ? tank.targetX / oldWidth * gameWidth : gameWidth / 2;
-            tank.y = gameHeight - 40;
+            tank.y = gameHeight - 26;
             enemies.forEach(e => { e.x *= gameWidth / oldWidth; e.y *= gameHeight / oldHeight; });
             bullets.forEach(b => { b.x *= gameWidth / oldWidth; b.y *= gameHeight / oldHeight; });
             draw();
@@ -334,7 +336,7 @@
             damageFlash = 0;
             muzzleFlash = 0;
             score = 0;
-            lives = 3;
+            lives = 4;
             difficultyMultiplier = 1;
             spawnInterval = 2500;
             enemies = [];
@@ -345,12 +347,6 @@
             updateScoreUI();
             updateProgressUI();
             
-            // 重置按鈕顏色
-            document.querySelectorAll('#wordButtons button').forEach(btn => {
-                btn.classList.remove('opacity-50', 'bg-green-800');
-                btn.classList.add('bg-gray-700');
-            });
-
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('winScreen').classList.add('hidden');
@@ -418,7 +414,7 @@
                 word: item.word,
                 emoji: item.emoji,
                 img: item.loadedImg,
-                speed: Math.max(0.35, (gameHeight - 40) / 600) * difficultyMultiplier, 
+                speed: Math.max(0.22, (gameHeight - 26) / 800) * difficultyMultiplier, 
                 rotation: 0 
             });
         }
@@ -497,13 +493,7 @@
                             // 記錄收集到的單字
                             if (!clearedWords.has(e.word)) {
                                 clearedWords.add(e.word);
-                                // 視覺效果：將對應的按鈕變綠色，表示已完成
-                                const btnId = `btn-${e.word.replace(/\s+/g, '-')}`;
-                                const btn = document.getElementById(btnId);
-                                if(btn) {
-                                    btn.classList.remove('bg-gray-700');
-                                    btn.classList.add('bg-green-800');
-                                }
+
                             }
 
                             updateScoreUI();
