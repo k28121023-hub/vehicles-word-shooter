@@ -99,7 +99,7 @@
             <p class="text-gray-300 mb-8 text-center px-4">
                 在遊戲區拖曳，或滑動控制條移動戰車<br>
                 另一隻手點選單字，即可發射火炮彈<br>
-                <span class="text-yellow-400">答對全部 18 個不同單字即可過關！<br>共有 4 顆心，答錯或撞到圖片會扣血。</span>
+                <span class="text-yellow-400">答對全部 18 個不同單字即可過關！<br>每 15 秒掉落補血愛心，接到補 1 顆，最多 4 顆心。<br>每批最多 4 張圖片隨機掉落，清空後出下一批。</span>
             </p>
             <button id="startBtn" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-xl font-bold shadow-lg transform transition hover:scale-105">開始遊戲</button>
         </div>
@@ -357,7 +357,7 @@
             bullets = [];
             particles = [];
             clearedWords.clear(); // 重置已收集單字
-            if (transportMode) spawnWave();
+            spawnWave();
             
             updateScoreUI();
             updateProgressUI();
@@ -509,17 +509,12 @@
             if (tank.x < tank.width/2) tank.x = tank.width/2;
             if (tank.x > gameWidth - tank.width/2) tank.x = gameWidth - tank.width/2;
 
-            // 交通工具版採每批最多四張，清空後才出下一批。
-            if (transportMode) {
-                updateHealth(dt, step);
-                if (enemies.length === 0) {
-                    spawnTimer += dt;
-                    if (spawnTimer >= 1000) { spawnWave(); spawnTimer = 0; }
-                } else { spawnTimer = 0; }
-            } else {
+            // 每批最多四張隨機圖片，清空後才出下一批。
+            updateHealth(dt, step);
+            if (enemies.length === 0) {
                 spawnTimer += dt;
-                if (spawnTimer > spawnInterval) { spawnEnemy(); spawnTimer = 0; }
-            }
+                if (spawnTimer >= 1000) { spawnWave(); spawnTimer = 0; }
+            } else { spawnTimer = 0; }
 
             // 4. 更新子彈
             bullets.forEach(b => {
