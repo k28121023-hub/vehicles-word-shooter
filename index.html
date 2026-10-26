@@ -437,7 +437,7 @@
         function spawnWave() {
             if (enemies.length !== 0 || gameState !== 'PLAYING') return;
             const pool = VOCABULARY.filter(v => !clearedWords.has(v.word));
-            const count = Math.min(6, pool.length);
+            const count = Math.min(4, pool.length);
             for (let i = 0; i < count; i++) {
                 const item = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
                 const size = Math.max(48, Math.min(62, gameWidth / 7));
@@ -509,7 +509,7 @@
             if (tank.x < tank.width/2) tank.x = tank.width/2;
             if (tank.x > gameWidth - tank.width/2) tank.x = gameWidth - tank.width/2;
 
-            // 交通工具版採每批最多六張，清空後才出下一批。
+            // 交通工具版採每批最多四張，清空後才出下一批。
             if (transportMode) {
                 updateHealth(dt, step);
                 if (enemies.length === 0) {
@@ -806,7 +806,7 @@
         if (transportMode) {
             document.title = '交通工具單字大射擊';
             document.querySelector('#gameHeader h1').textContent = '🚗 交通工具大射擊';
-            document.querySelector('#startScreen .text-yellow-400').innerHTML = '答對全部 17 個不同單字即可過關！<br>每 15 秒掉落補血愛心，接到補 1 顆，最多 4 顆心。<br>每批最多 6 張圖片隨機掉落，清空後出下一批。';
+            document.querySelector('#startScreen .text-yellow-400').innerHTML = '答對全部 17 個不同單字即可過關！<br>每 15 秒掉落補血愛心，接到補 1 顆，最多 4 顆心。<br>每批最多 4 張圖片隨機掉落，清空後出下一批。';
             document.querySelector('#winScreen p').textContent = '太棒了！所有的交通工具單字都學會了！';
         }
 
