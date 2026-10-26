@@ -133,7 +133,10 @@
 
     <script>
         // --- 遊戲資料 (修正後的 18 個單字) ---
-        const VOCABULARY = [
+        const requestedVersion = new URLSearchParams(window.location.search).get('version') || '';
+        const transportMode = /four-hearts-calm-panel|mobile-scroll-fix/.test(requestedVersion);
+        const TRANSPORT_VOCABULARY = [{"word": "bus", "label": "公車", "emoji": "🚌", "img": "images/bus.png"}, {"word": "train", "label": "火車", "emoji": "🚆", "img": "images/train.png"}, {"word": "car", "label": "汽車", "emoji": "🚗", "img": "images/car.png"}, {"word": "subway", "label": "地鐵", "emoji": "🚇", "img": "images/subway.png"}, {"word": "scooter", "label": "機車", "emoji": "🛵", "img": "images/scooter.png"}, {"word": "motorcycle", "label": "重型機車", "emoji": "🏍️", "img": "images/motorcycle.png"}, {"word": "bicycle", "label": "腳踏車", "emoji": "🚲", "img": "images/bicycle.png"}, {"word": "taxi", "label": "計程車", "emoji": "🚕", "img": "images/taxi.png"}, {"word": "cable car", "label": "纜車", "emoji": "🚡", "img": "images/cable-car.png"}, {"word": "ship", "label": "郵輪", "emoji": "🚢", "img": "images/ship.png"}, {"word": "ferry", "label": "渡輪", "emoji": "⛴️", "img": "images/ferry.png"}, {"word": "airplane", "label": "飛機", "emoji": "✈️", "img": "images/airplane.png"}, {"word": "light rail", "label": "輕軌", "emoji": "🚈", "img": "images/light-rail.png"}, {"word": "drone", "label": "無人機", "emoji": "🛸", "img": "images/drone.png"}, {"word": "electric car", "label": "電動汽車", "emoji": "🚗", "img": "images/electric-car.png"}, {"word": "double-decker bus", "label": "雙層巴士", "emoji": "🚌", "img": "images/double-decker-bus.png"}, {"word": "electric scooter", "label": "電動機車", "emoji": "🛵", "img": "images/electric-scooter.png"}];
+        const VOCABULARY = transportMode ? TRANSPORT_VOCABULARY : [
     {
         "word": "plastic wrapping",
         "img": "images/office-plastic-wrapping.png",
@@ -264,6 +267,8 @@
         let lives = 4;
         let lastTime = 0;
         let spawnTimer = 0;
+        let healthTimer = 0;
+        let healthPacks = [];
         let spawnInterval = 2000;
         let difficultyMultiplier = 1;
         
@@ -328,6 +333,7 @@
             tank.y = gameHeight - 26;
             enemies.forEach(e => { e.x *= gameWidth / oldWidth; e.y *= gameHeight / oldHeight; });
             bullets.forEach(b => { b.x *= gameWidth / oldWidth; b.y *= gameHeight / oldHeight; });
+            healthPacks.forEach(pack => { pack.x *= gameWidth / oldWidth; pack.y *= gameHeight / oldHeight; });
             draw();
         }
         new ResizeObserver(resize).observe(container);
@@ -339,6 +345,8 @@
             cancelAnimationFrame(animationId);
             gameState = 'PLAYING';
             spawnTimer = 0;
+            healthTimer = 0;
+            healthPacks = [];
             damageFlash = 0;
             muzzleFlash = 0;
             score = 0;
@@ -349,6 +357,7 @@
             bullets = [];
             particles = [];
             clearedWords.clear(); // 重置已收集單字
+            if (transportMode) spawnWave();
             
             updateScoreUI();
             updateProgressUI();
@@ -402,20 +411,20 @@
             });
         }
 
-        function spawnEnemy() {
+        function spawnEnemy(selectedItem = null, lane = null, depth = 0) {
             // 策略：優先生成還沒收集到的單字
             const uncollected = VOCABULARY.filter(v => !clearedWords.has(v.word));
             
             // 如果還有未收集的，優先從這裡面挑；否則隨機挑（雖然理論上收集完就贏了，但防呆）
             const pool = uncollected.length > 0 ? uncollected : VOCABULARY;
             
-            const item = pool[Math.floor(Math.random() * pool.length)];
+            const item = selectedItem || pool[Math.floor(Math.random() * pool.length)];
             const size = Math.max(48, Math.min(62, gameWidth / 7));
-            const x = Math.random() * (gameWidth - size - 20) + size/2 + 10; 
+            const x = lane === null ? Math.random() * (gameWidth - size - 20) + size/2 + 10 : gameWidth * (lane + 0.5) / 3; 
             
             enemies.push({
                 x: x,
-                y: -80,
+                y: -80 - depth * 100,
                 size: size,
                 word: item.word,
                 emoji: item.emoji,
@@ -423,6 +432,34 @@
                 speed: Math.max(0.22, (gameHeight - 26) / 800) * difficultyMultiplier, 
                 rotation: 0 
             });
+        }
+
+        function spawnWave() {
+            if (enemies.length !== 0 || gameState !== 'PLAYING') return;
+            const pool = VOCABULARY.filter(v => !clearedWords.has(v.word));
+            const count = Math.min(6, pool.length);
+            for (let i = 0; i < count; i++) {
+                const item = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+                spawnEnemy(item, i % 3, Math.floor(i / 3));
+            }
+        }
+
+        function updateHealth(dt, step) {
+            healthTimer += dt;
+            if (healthTimer >= 15000) {
+                healthTimer %= 15000;
+                healthPacks.push({x: 24 + Math.random() * Math.max(0, gameWidth - 48), y: -20});
+            }
+            healthPacks.forEach(pack => {
+                pack.y += Math.max(0.65, (gameHeight - 26) / 650) * step;
+                if (Math.abs(pack.x - tank.x) < tank.width/2 + 16 && Math.abs(pack.y - tank.y) < tank.height/2 + 16) {
+                    lives = Math.min(4, lives + 1);
+                    updateScoreUI();
+                    createExplosion(pack.x, pack.y, '#4ade80');
+                    pack.collected = true;
+                }
+            });
+            healthPacks = healthPacks.filter(pack => !pack.collected && pack.y < gameHeight + 30);
         }
 
         function createExplosion(x, y, color) {
@@ -461,11 +498,16 @@
             if (tank.x < tank.width/2) tank.x = tank.width/2;
             if (tank.x > gameWidth - tank.width/2) tank.x = gameWidth - tank.width/2;
 
-            // 3. 生成敵人
-            spawnTimer += dt;
-            if (spawnTimer > spawnInterval) {
-                spawnEnemy();
-                spawnTimer = 0;
+            // 交通工具版採每批最多六張，清空後才出下一批。
+            if (transportMode) {
+                updateHealth(dt, step);
+                if (enemies.length === 0) {
+                    spawnTimer += dt;
+                    if (spawnTimer >= 1000) { spawnWave(); spawnTimer = 0; }
+                } else { spawnTimer = 0; }
+            } else {
+                spawnTimer += dt;
+                if (spawnTimer > spawnInterval) { spawnEnemy(); spawnTimer = 0; }
             }
 
             // 4. 更新子彈
@@ -648,6 +690,16 @@
                 ctx.restore();
             });
 
+            healthPacks.forEach(pack => {
+                ctx.save(); ctx.translate(pack.x, pack.y);
+                ctx.shadowColor = '#4ade80'; ctx.shadowBlur = 10;
+                ctx.fillStyle = '#166534'; ctx.strokeStyle = '#86efac'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#f0fdf4';
+                ctx.fillRect(-3, -10, 6, 20); ctx.fillRect(-10, -3, 20, 6);
+                ctx.restore();
+            });
+
             if (damageFlash > 0) {
                 ctx.fillStyle = `rgba(239,68,68,${damageFlash / 240 * 0.24})`;
                 ctx.fillRect(0, 0, gameWidth, gameHeight);
@@ -722,8 +774,16 @@
         window.visualViewport?.addEventListener('resize', syncVisibleHeight);
         window.addEventListener('resize', syncVisibleHeight);
 
+        if (transportMode) {
+            document.title = '交通工具單字大射擊';
+            document.querySelector('#gameHeader h1').textContent = '🚗 交通工具大射擊';
+            document.querySelector('#startScreen .text-yellow-400').innerHTML = '答對全部 17 個不同單字即可過關！<br>每 15 秒掉落補血圖示，接到補 1 顆，最多 4 顆心。<br>每批最多 6 張圖片，清空後出下一批。';
+            document.querySelector('#winScreen p').textContent = '太棒了！所有的交通工具單字都學會了！';
+        }
+
         // --- 啟動 ---
         initUI();
+        updateProgressUI();
         resize();
         
         ctx.fillStyle = '#1a202c';
