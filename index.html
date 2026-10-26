@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>交通工具單字大射擊</title>
+    <title>辦公與商務單字大射擊</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -71,12 +71,12 @@
     <!-- Game Header -->
     <div id="gameHeader" class="flex justify-between items-center px-4 py-2 bg-gray-800 border-b border-gray-700 h-14 shrink-0">
         <div>
-            <h1 class="text-lg font-bold text-yellow-400">🚗 交通工具大射擊</h1>
+            <h1 class="text-lg font-bold text-yellow-400">📦 辦公與商務大射擊</h1>
         </div>
         <div class="stats flex gap-4">
             <div class="text-right">
                 <span class="text-xs text-gray-400">進度</span>
-                <div id="progressDisplay" class="text-xl font-mono font-bold text-blue-400">0/17</div>
+                <div id="progressDisplay" class="text-xl font-mono font-bold text-blue-400">0/18</div>
             </div>
             <div class="text-right">
                 <span class="text-xs text-gray-400">分數</span>
@@ -99,7 +99,7 @@
             <p class="text-gray-300 mb-8 text-center px-4">
                 在遊戲區拖曳，或滑動控制條移動戰車<br>
                 另一隻手點選單字，即可發射火炮彈<br>
-                <span class="text-yellow-400">答對全部 17 個不同單字即可過關！<br>共有 4 顆心，答錯或撞到圖片會扣血。</span>
+                <span class="text-yellow-400">答對全部 18 個不同單字即可過關！<br>共有 4 顆心，答錯或撞到圖片會扣血。</span>
             </p>
             <button id="startBtn" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-xl font-bold shadow-lg transform transition hover:scale-105">開始遊戲</button>
         </div>
@@ -115,7 +115,7 @@
         <!-- Win Screen Overlay -->
         <div id="winScreen" class="hidden absolute inset-0 bg-yellow-600/95 flex flex-col justify-center items-center z-20">
             <h2 class="text-5xl font-bold mb-2 text-white">🎉 闖關成功！</h2>
-            <p class="text-xl mb-6 text-white">太棒了！所有的交通工具單字都學會了！</p>
+            <p class="text-xl mb-6 text-white">太棒了！所有的辦公與商務單字都學會了！</p>
             <p class="text-2xl mb-6 text-white">最終分數: <span id="winScore" class="font-mono text-yellow-100 font-bold">0</span></p>
             <button id="winRestartBtn" class="px-8 py-3 bg-white text-yellow-700 rounded-lg text-xl font-bold shadow-lg transform transition hover:scale-105">再挑戰一次</button>
         </div>
@@ -132,109 +132,115 @@
     </div>
 
     <script>
-        // --- 遊戲資料 (修正後的 17 個單字) ---
+        // --- 遊戲資料 (修正後的 18 個單字) ---
         const VOCABULARY = [
     {
-        "word": "bus",
-        "img": "images/bus.png",
-        "emoji": "🚌",
-        "label": "公車"
+        "word": "plastic wrapping",
+        "img": "images/office-plastic-wrapping.png",
+        "emoji": "📦",
+        "label": "塑膠包裝材料"
     },
     {
-        "word": "train",
-        "img": "images/train.png",
-        "emoji": "🚆",
-        "label": "火車"
+        "word": "dining suite",
+        "img": "images/office-dining-suite.png",
+        "emoji": "🪑",
+        "label": "餐桌椅組"
     },
     {
-        "word": "car",
-        "img": "images/car.png",
-        "emoji": "🚗",
-        "label": "汽車"
+        "word": "receipt",
+        "img": "images/office-receipt.png",
+        "emoji": "🧾",
+        "label": "收據"
     },
     {
-        "word": "subway",
-        "img": "images/subway.png",
-        "emoji": "🚇",
-        "label": "地鐵"
+        "word": "whiteboard",
+        "img": "images/office-whiteboard.png",
+        "emoji": "📋",
+        "label": "白板"
     },
     {
-        "word": "scooter",
-        "img": "images/scooter.png",
-        "emoji": "🛵",
-        "label": "機車"
+        "word": "cable",
+        "img": "images/office-cable.png",
+        "emoji": "🔌",
+        "label": "纜線"
     },
     {
-        "word": "motorcycle",
-        "img": "images/motorcycle.png",
-        "emoji": "🏍️",
-        "label": "重型機車"
+        "word": "cartridge",
+        "img": "images/office-cartridge.png",
+        "emoji": "🖨️",
+        "label": "碳粉匣"
     },
     {
-        "word": "bicycle",
-        "img": "images/bicycle.png",
-        "emoji": "🚲",
-        "label": "腳踏車"
+        "word": "parking lot",
+        "img": "images/office-parking-lot.png",
+        "emoji": "🅿️",
+        "label": "停車場"
     },
     {
-        "word": "taxi",
-        "img": "images/taxi.png",
-        "emoji": "🚕",
-        "label": "計程車"
+        "word": "lamp",
+        "img": "images/office-lamp.png",
+        "emoji": "💡",
+        "label": "檯燈"
     },
     {
-        "word": "cable car",
-        "img": "images/cable-car.png",
-        "emoji": "🚡",
-        "label": "纜車"
+        "word": "phone bill",
+        "img": "images/office-phone-bill.png",
+        "emoji": "📱",
+        "label": "電話帳單"
     },
     {
-        "word": "ship",
-        "img": "images/ship.png",
-        "emoji": "🚢",
-        "label": "郵輪"
+        "word": "envelope",
+        "img": "images/office-envelope.png",
+        "emoji": "✉️",
+        "label": "信封"
     },
     {
-        "word": "ferry",
-        "img": "images/ferry.png",
-        "emoji": "⛴️",
-        "label": "渡輪"
+        "word": "message",
+        "img": "images/office-message.png",
+        "emoji": "📝",
+        "label": "留言"
     },
     {
-        "word": "airplane",
-        "img": "images/airplane.png",
-        "emoji": "✈️",
-        "label": "飛機"
+        "word": "package",
+        "img": "images/office-package.png",
+        "emoji": "📦",
+        "label": "包裹"
     },
     {
-        "word": "light rail",
-        "img": "images/light-rail.png",
-        "emoji": "🚈",
-        "label": "輕軌"
+        "word": "courier",
+        "img": "images/office-courier.png",
+        "emoji": "🚚",
+        "label": "快遞員"
     },
     {
-        "word": "drone",
-        "img": "images/drone.png",
-        "emoji": "🛸",
-        "label": "無人機"
+        "word": "business card",
+        "img": "images/office-business-card.png",
+        "emoji": "💼",
+        "label": "名片"
     },
     {
-        "word": "electric car",
-        "img": "images/electric-car.png",
-        "emoji": "🚗",
-        "label": "電動汽車"
+        "word": "letter",
+        "img": "images/office-letter.png",
+        "emoji": "📄",
+        "label": "信件"
     },
     {
-        "word": "double-decker bus",
-        "img": "images/double-decker-bus.png",
-        "emoji": "🚌",
-        "label": "雙層巴士"
+        "word": "signature",
+        "img": "images/office-signature.png",
+        "emoji": "✍️",
+        "label": "簽名"
     },
     {
-        "word": "electric scooter",
-        "img": "images/electric-scooter.png",
-        "emoji": "🛵",
-        "label": "電動機車"
+        "word": "check",
+        "img": "images/office-check.png",
+        "emoji": "💵",
+        "label": "支票"
+    },
+    {
+        "word": "cash",
+        "img": "images/office-cash.png",
+        "emoji": "💵",
+        "label": "現金"
     }
 ];
 
@@ -503,7 +509,7 @@
                             e.active = false;
                             b.active = false;
 
-                            // 檢查是否獲勝 (收集滿 17 個)
+                            // 檢查是否獲勝 (收集滿 18 個)
                             if (clearedWords.size >= VOCABULARY.length) {
                                 gameWin();
                             }
