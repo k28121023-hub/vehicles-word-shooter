@@ -411,7 +411,7 @@
             });
         }
 
-        function spawnEnemy(selectedItem = null, lane = null, depth = 0) {
+        function spawnEnemy(selectedItem = null, spawnX = null, depth = 0) {
             // 策略：優先生成還沒收集到的單字
             const uncollected = VOCABULARY.filter(v => !clearedWords.has(v.word));
             
@@ -420,11 +420,11 @@
             
             const item = selectedItem || pool[Math.floor(Math.random() * pool.length)];
             const size = Math.max(48, Math.min(62, gameWidth / 7));
-            const x = lane === null ? Math.random() * (gameWidth - size - 20) + size/2 + 10 : gameWidth * (lane + 0.5) / 3; 
+            const x = spawnX === null ? Math.random() * (gameWidth - size - 20) + size/2 + 10 : spawnX; 
             
             enemies.push({
                 x: x,
-                y: -80 - depth * 100,
+                y: -80 - depth,
                 size: size,
                 word: item.word,
                 emoji: item.emoji,
@@ -440,7 +440,18 @@
             const count = Math.min(6, pool.length);
             for (let i = 0; i < count; i++) {
                 const item = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-                spawnEnemy(item, i % 3, Math.floor(i / 3));
+                const size = Math.max(48, Math.min(62, gameWidth / 7));
+                let x, depth;
+                let attempts = 0;
+                do {
+                    x = size/2 + 10 + Math.random() * Math.max(0, gameWidth - size - 20);
+                    depth = Math.random() * 300 + i * 20;
+                    attempts++;
+                } while (attempts < 40 && enemies.some(e => Math.abs(e.x - x) < size + 10 && Math.abs(e.y - (-80 - depth)) < size + 16));
+                if (enemies.some(e => Math.abs(e.x - x) < size + 10 && Math.abs(e.y - (-80 - depth)) < size + 16)) {
+                    depth = Math.max(0, ...enemies.map(e => -e.y - 80)) + size + 20;
+                }
+                spawnEnemy(item, x, depth);
             }
         }
 
@@ -691,12 +702,30 @@
             });
 
             healthPacks.forEach(pack => {
+                // Glossy heart pickup with a fine rim, reflection and small sparkle.
                 ctx.save(); ctx.translate(pack.x, pack.y);
-                ctx.shadowColor = '#4ade80'; ctx.shadowBlur = 10;
-                ctx.fillStyle = '#166534'; ctx.strokeStyle = '#86efac'; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                ctx.shadowBlur = 0; ctx.fillStyle = '#f0fdf4';
-                ctx.fillRect(-3, -10, 6, 20); ctx.fillRect(-10, -3, 20, 6);
+                ctx.rotate(Math.sin(pack.y / 60) * 0.07);
+                ctx.shadowColor = '#fb7185'; ctx.shadowBlur = 15;
+                const heartGloss = ctx.createLinearGradient(-15, -21, 14, 18);
+                heartGloss.addColorStop(0, '#fff1f2');
+                heartGloss.addColorStop(0.22, '#fb7185');
+                heartGloss.addColorStop(0.55, '#e11d48');
+                heartGloss.addColorStop(1, '#881337');
+                ctx.fillStyle = heartGloss; ctx.strokeStyle = '#fecdd3'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(0, 16);
+                ctx.bezierCurveTo(-5, 11, -21, 2, -21, -8);
+                ctx.bezierCurveTo(-21, -23, -5, -24, 0, -12);
+                ctx.bezierCurveTo(5, -24, 21, -23, 21, -8);
+                ctx.bezierCurveTo(21, 2, 5, 11, 0, 16);
+                ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.beginPath(); ctx.ellipse(-10, -13, 5, 2.3, -0.6, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = 'rgba(255,224,230,0.65)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(12,-9); ctx.quadraticCurveTo(17,-3,4,9); ctx.stroke();
+                ctx.fillStyle = '#fff1f2';
+                ctx.beginPath(); ctx.moveTo(23,-25);ctx.lineTo(25,-20);ctx.lineTo(30,-18);
+                ctx.lineTo(25,-16);ctx.lineTo(23,-11);ctx.lineTo(21,-16);ctx.lineTo(16,-18);ctx.lineTo(21,-20);ctx.closePath();ctx.fill();
                 ctx.restore();
             });
 
@@ -777,7 +806,7 @@
         if (transportMode) {
             document.title = '交通工具單字大射擊';
             document.querySelector('#gameHeader h1').textContent = '🚗 交通工具大射擊';
-            document.querySelector('#startScreen .text-yellow-400').innerHTML = '答對全部 17 個不同單字即可過關！<br>每 15 秒掉落補血圖示，接到補 1 顆，最多 4 顆心。<br>每批最多 6 張圖片，清空後出下一批。';
+            document.querySelector('#startScreen .text-yellow-400').innerHTML = '答對全部 17 個不同單字即可過關！<br>每 15 秒掉落補血愛心，接到補 1 顆，最多 4 顆心。<br>每批最多 6 張圖片隨機掉落，清空後出下一批。';
             document.querySelector('#winScreen p').textContent = '太棒了！所有的交通工具單字都學會了！';
         }
 
