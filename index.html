@@ -64,6 +64,17 @@
         @media(orientation:landscape) and (min-width:600px) {body{grid-template-columns:minmax(0,1fr) clamp(260px,38vw,430px);grid-template-rows:auto minmax(0,1fr);}#gameHeader{grid-column:1/-1;}#wordPanel{border-top:0;border-left:1px solid #4b5563;}#wordButtons{grid-template-columns:repeat(2,minmax(0,1fr));}#wordPanel .panel-hint{font-size:11px;}}
         @media(max-height:560px) and (orientation:landscape) {#gameHeader{min-height:40px;padding:2px 10px;}#wordPanel{padding:4px;}#wordButtons{gap:4px;grid-auto-rows:minmax(48px,auto);}#wordButtons button{min-height:48px;}#steering{height:32px;}}
         @media(max-width:359px) {#gameHeader{padding:4px 6px;}#gameHeader h1{font-size:12px;}#wordButtons{grid-template-columns:repeat(2,minmax(0,1fr));}}
+        @media(min-width:1024px) {
+            html.keyboard-mode body {max-width:1600px;margin-inline:auto;grid-template-columns:minmax(0,1fr) clamp(320px,30vw,440px);grid-template-rows:auto minmax(0,1fr);}
+            html.keyboard-mode #gameHeader {grid-column:1/-1;}
+            html.keyboard-mode #wordButtons {grid-template-columns:repeat(3,minmax(0,1fr));}
+            html.keyboard-mode #wordButtons button {min-height:58px;font-size:14px;}
+        }
+        @media(hover:hover) and (pointer:fine) {
+            html.keyboard-mode .steering-label {display:none;}
+            html.keyboard-mode #wordPanel {grid-template-rows:auto minmax(0,1fr);}
+        }
+        html.keyboard-mode #selectedWordDisplay {display:block;min-height:20px;color:#cbd5e1;font-size:13px;}
     </style>
 </head>
 <body class="bg-gray-900 h-screen w-screen flex flex-col overflow-hidden text-white select-none">
@@ -136,6 +147,7 @@
         const requestedVersion = new URLSearchParams(window.location.search).get('version') || '';
         const transportMode = /four-hearts-calm-panel|mobile-scroll-fix/.test(requestedVersion);
         const TRANSPORT_VOCABULARY = [{"word": "bus", "label": "公車", "emoji": "🚌", "img": "images/bus.png"}, {"word": "train", "label": "火車", "emoji": "🚆", "img": "images/train.png"}, {"word": "car", "label": "汽車", "emoji": "🚗", "img": "images/car.png"}, {"word": "subway", "label": "地鐵", "emoji": "🚇", "img": "images/subway.png"}, {"word": "scooter", "label": "機車", "emoji": "🛵", "img": "images/scooter.png"}, {"word": "motorcycle", "label": "重型機車", "emoji": "🏍️", "img": "images/motorcycle.png"}, {"word": "bicycle", "label": "腳踏車", "emoji": "🚲", "img": "images/bicycle.png"}, {"word": "taxi", "label": "計程車", "emoji": "🚕", "img": "images/taxi.png"}, {"word": "cable car", "label": "纜車", "emoji": "🚡", "img": "images/cable-car.png"}, {"word": "ship", "label": "郵輪", "emoji": "🚢", "img": "images/ship.png"}, {"word": "ferry", "label": "渡輪", "emoji": "⛴️", "img": "images/ferry.png"}, {"word": "airplane", "label": "飛機", "emoji": "✈️", "img": "images/airplane.png"}, {"word": "light rail", "label": "輕軌", "emoji": "🚈", "img": "images/light-rail.png"}, {"word": "drone", "label": "無人機", "emoji": "🛸", "img": "images/drone.png"}, {"word": "electric car", "label": "電動汽車", "emoji": "🚗", "img": "images/electric-car.png"}, {"word": "double-decker bus", "label": "雙層巴士", "emoji": "🚌", "img": "images/double-decker-bus.png"}, {"word": "electric scooter", "label": "電動機車", "emoji": "🛵", "img": "images/electric-scooter.png"}];
+        const keyboardMode = !transportMode;
         const VOCABULARY = transportMode ? TRANSPORT_VOCABULARY : [
     {
         "word": "plastic wrapping",
@@ -262,6 +274,8 @@
         let animationId = 0;
         let damageFlash = 0;
         let muzzleFlash = 0;
+        let selectedWord = VOCABULARY[0].word;
+        const heldKeys = new Set();
         let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
         let score = 0;
         let lives = 4;
@@ -309,14 +323,27 @@
                 btn.className = 'min-h-[44px] btn-press bg-gray-700 text-white font-semibold py-2 px-1 rounded border border-gray-500 text-xs sm:text-sm flex flex-col items-center justify-center';
                 btn.innerHTML = `<span class="text-yellow-300 leading-tight text-center break-words w-full">${item.word}</span><span class="text-[10px] text-gray-400 mt-0.5">${item.label}</span>`;
                 
+                let lastWordPointer = 'mouse';
+                btn.addEventListener('pointerdown', e => { lastWordPointer = e.pointerType; });
+                btn.addEventListener('focus', () => { if (keyboardMode) selectWord(item.word); });
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
-                    fireBullet(item.word);
+                    if (keyboardMode) selectWord(item.word);
+                    if (!keyboardMode || lastWordPointer === 'touch' || lastWordPointer === 'pen') fireBullet(item.word);
 
                 });
 
 
                 wordGrid.appendChild(btn);
+            });
+        }
+
+        function selectWord(word) {
+            selectedWord = word;
+            const status = document.getElementById('selectedWordDisplay');
+            if (status) status.textContent = `目前彈種：${word}`;
+            document.querySelectorAll('#wordButtons button').forEach(btn => {
+                btn.setAttribute('aria-pressed', String(btn.id === `btn-${word.replace(/\s+/g, '-')}`));
             });
         }
 
@@ -347,6 +374,7 @@
             spawnTimer = 0;
             healthTimer = 0;
             healthPacks = [];
+            heldKeys.clear();
             damageFlash = 0;
             muzzleFlash = 0;
             score = 0;
@@ -504,6 +532,12 @@
             difficultyMultiplier = 1 + (score / 1000); 
             if (spawnInterval > 1000) spawnInterval = 2500 - (score * 5);
 
+            if (keyboardMode) {
+                const left = heldKeys.has('ArrowLeft') || heldKeys.has('KeyA');
+                const right = heldKeys.has('ArrowRight') || heldKeys.has('KeyD');
+                const direction = Number(right) - Number(left);
+                if (direction) tank.targetX = Math.max(tank.width/2, Math.min(gameWidth - tank.width/2, tank.targetX + direction * 330 * dt / 1000));
+            }
             // 2. 戰車移動
             tank.x += (tank.targetX - tank.x) * (1 - Math.pow(0.8, step));
             if (tank.x < tank.width/2) tank.x = tank.width/2;
@@ -770,20 +804,46 @@
 
         let steeringPointer = null;
         canvas.addEventListener('pointerdown', e => {
+            if (keyboardMode && e.pointerType === 'mouse') return;
             if (steeringPointer !== null) return;
             steeringPointer = e.pointerId;
             canvas.setPointerCapture(e.pointerId);
             handleInput(e.clientX);
         });
         canvas.addEventListener('pointermove', e => {
+            if (keyboardMode && e.pointerType === 'mouse') return;
             if (e.pointerId === steeringPointer || (e.pointerType === 'mouse' && steeringPointer === null)) handleInput(e.clientX);
         });
         ['pointerup','pointercancel','lostpointercapture'].forEach(type => canvas.addEventListener(type, e => {
             if (e.pointerId === steeringPointer) steeringPointer = null;
         }));
+        document.getElementById('steering').addEventListener('pointerdown', e => {
+            if (keyboardMode && e.pointerType === 'mouse') e.preventDefault();
+        });
         document.getElementById('steering').addEventListener('input', e => {
             tank.targetX = tank.width/2 + Number(e.target.value) / 1000 * (gameWidth - tank.width);
         });
+
+        window.addEventListener('keydown', e => {
+            if (!keyboardMode || e.altKey || e.ctrlKey || e.metaKey) return;
+            if (e.target?.matches?.('input:not([type="range"]), textarea, select, [contenteditable="true"]')) return;
+            if (['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code)) {
+                e.preventDefault();
+                if (gameState === 'PLAYING') heldKeys.add(e.code);
+            } else if (e.code === 'Space') {
+                e.preventDefault();
+                if (!e.repeat && gameState === 'PLAYING') fireBullet(selectedWord);
+            } else if (['ArrowUp','ArrowDown'].includes(e.code)) {
+                e.preventDefault();
+                const index = VOCABULARY.findIndex(item => item.word === selectedWord);
+                const next = (index + (e.code === 'ArrowDown' ? 1 : -1) + VOCABULARY.length) % VOCABULARY.length;
+                selectWord(VOCABULARY[next].word);
+                document.getElementById(`btn-${selectedWord.replace(/\s+/g, '-')}`)?.scrollIntoView?.({block:'nearest'});
+            }
+        });
+        window.addEventListener('keyup', e => { heldKeys.delete(e.code); });
+        window.addEventListener('blur', () => { heldKeys.clear(); });
+        document.addEventListener('visibilitychange', () => { if (document.hidden) heldKeys.clear(); });
 
         document.getElementById('startBtn').addEventListener('click', startGame);
         document.getElementById('restartBtn').addEventListener('click', startGame);
@@ -805,8 +865,15 @@
             document.querySelector('#winScreen p').textContent = '太棒了！所有的交通工具單字都學會了！';
         }
 
+        if (keyboardMode) {
+            document.documentElement.classList.add('keyboard-mode');
+            document.querySelector('#startScreen p').innerHTML = '電腦：← → 或 A / D 移動，Space 發射<br>點選單字或用 ↑ ↓ 選擇彈種（也可 Tab 切換）<br>平板：觸控拖曳移動，點單字直接發射<br><span class="text-yellow-400">答對全部 18 個不同單字過關；每 15 秒出現補血愛心，最多 4 顆心。每批最多 4 張隨機圖片。</span>';
+            document.querySelector('.panel-hint').innerHTML = '電腦：← → / A D 移動・Space 發射・↑ ↓ 選字<br>平板：拖曳移動・點單字發射<br><span id="selectedWordDisplay" aria-live="polite"></span>';
+        }
+
         // --- 啟動 ---
         initUI();
+        if (keyboardMode) selectWord(selectedWord);
         updateProgressUI();
         resize();
         
